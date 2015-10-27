@@ -1,0 +1,108 @@
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css">
+    <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.js"></script>
+    <meta charset="UTF-8">
+    <title>File Handler: SEARCH</title>
+</head>
+<body>
+
+<div>
+    <a href="index.html">MAIN page</a>
+</div>
+<input type="file" id="files" name="files[]" multiple />
+<output id="list"></output>
+
+<output id="text"></output>
+
+<div>
+    <!-- embed the pdftotext web app as an iframe -->
+    <iframe id="processor" src="../"></iframe>
+
+    <!-- a container for the output -->
+    <div id="output"><div id="intro">Extracting text from a PDF file using only Javascript.<br>Tested in Chrome 16 and Firefox 9.</div></div>
+</div>
+
+<div>
+    <!-- the PDF file must be on the same domain as this page -->
+    <iframe id="input" src="journal.pone.0026738.pdf"></iframe>
+</div>
+
+<script>
+    var input = document.getElementById("input");
+    var processor = document.getElementById("processor");
+    var output = document.getElementById("output");
+
+    window.addEventListener("message", function(event){
+        if (event.source != processor.contentWindow) return;
+
+        switch (event.data){
+            case "ready":
+                var xhr = new XMLHttpRequest;
+                xhr.open('GET', input.getAttribute("src"), true);
+                xhr.responseType = "arraybuffer";
+
+                xhr.onload = function(event) {
+                    processor.contentWindow.postMessage(this.response, "*");
+                };
+
+                xhr.send();
+                break;
+
+            default:
+                output.textContent = event.data.replace(/\s+/g, " ");
+                break;
+        }
+    }, true);
+</script>
+
+</body>
+
+<script>
+    function handleFileSelect(evt) {
+        var files = evt.target.files; // FileList object
+
+        // files is a FileList of File objects. List some properties.
+        var output = [];
+        for (var i = 0, f; f = files[i]; i++) {
+            output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                    f.size, ' bytes, last modified: ',
+                    f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                    '</li>');
+        }
+        document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+    }
+
+    document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+    function getPdf(arg, callback) {
+        var params = arg;
+        if (typeof arg === 'string')
+            params = { url: arg };
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', params.url);
+        xhr.mozResponseType = xhr.responseType = 'arraybuffer';
+        xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
+
+        if ('progress' in params)
+            xhr.onprogress = params.progress || undefined;
+
+        if ('error' in params)
+            xhr.onerror = params.error || undefined;
+
+        xhr.onreadystatechange = function getPdfOnreadystatechange() {
+            if (xhr.readyState === 4 && xhr.status === xhr.expected) {
+                var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                xhr.responseArrayBuffer || xhr.response);
+                callback(data);
+            }
+        };
+        xhr.send(null);
+    }
+</script>
+
+
+
+</html>
