@@ -4,13 +4,55 @@
     <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
     <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.js"></script>
     <meta charset="UTF-8">
-    <title>File Handler</title>
+    <title>File Handler: SUB FILES</title>
 </head>
 <body>
 
 <div>
-    <a href="subFilesHandler.html">Handle SUB files</a>
+    <input type="file" name="file" id="file">
+    <button id="subHandleBtn" onclick="subHandle();"/>
+    Remove service data</button>
+</div>
+<div>
+    <textarea id="fileText" style="width:100%;height:60%"></textarea>
 </div>
 
 </body>
+
+<script>
+    document.getElementById('file').onchange = function () {
+        var file = this.files[0];
+
+        var reader = new FileReader();
+        reader.onload = function (progressEvent) {
+            document.getElementById("fileText").value = this.result;
+        };
+        reader.readAsText(file);
+    };
+    function subHandle() {
+        var lines = document.getElementById("fileText").value.split('\n');
+        var newText = "";
+        var isPrevLineEmpty = true;
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            line = line.trim();
+            var fSymbol = line.substring(0, 1);
+            if (line == "" || "0123456789".indexOf(fSymbol) >= 0) {
+                isPrevLineEmpty = true;
+            } else {
+                if (isPrevLineEmpty && newText.length > 4 &&
+                        newText.substring(newText.length - 4, newText.length - 1) == "...") {
+                    newText = newText.substring(0, newText.length - 4) + ' ';
+                } else if (fSymbol >= 'a' && fSymbol <= 'z') {
+                    newText = newText.substring(0, newText.length - 1) + ' ';
+                }
+                newText += line + '\n';
+                isPrevLineEmpty = false;
+            }
+        }
+        document.getElementById("fileText").value = newText;
+    }
+    ;
+</script>
+
 </html>
